@@ -1,78 +1,58 @@
 
 
-# from airflow import Dataset
-# from airflow.decorators import dag, task
-# from pendulum import datetime
-# import requests
-# from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
-# from airflow.operators.dummy import DummyOperator
+from airflow import Dataset
+from airflow.decorators import dag, task
+from pendulum import datetime
+import requests
+from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
+from airflow.operators.dummy import DummyOperator
 # from sqlalchemy import create_engine
 # from sqlalchemy.orm import Session
 # from sqlalchemy.orm import DeclarativeBase
 # from sqlalchemy.orm import Mapped
 # from sqlalchemy.orm import mapped_column
-# @dag(
-#     start_date=datetime(2024, 1, 1),
-#     schedule="@daily",
-#     catchup=False,
-#     doc_md=__doc__,
-#     default_args={"owner": "Astro", "retries": 3},
-#     tags=["example"],
-# )
-# def workflow():
-#     # Define tasks
-#     @task(
-#         # Define a dataset outlet for the task. This can be used to schedule downstream DAGs when this task has run.
-#         outlets=[Dataset("aep_profile")]
-#     )  # Define that this task updates the `current_astronauts` Dataset
-#     def get_aep_profile(**context) -> list[dict]:
-#         """
-#         This task uses the requests library to retrieve a list of Astronauts
-#         currently in space. The results are pushed to XCom with a specific key
-#         so they can be used in a downstream pipeline. The task returns a list
-#         of Astronauts to be used in the next task.
-#         """
-#         try:
-#             # r = requests.get("http://api.open-notify.org/astros.json")
-#             # r.raise_for_status()
-#             # number_of_people_in_space = r.json()["number"]
-#             # list_of_people_in_space = r.json()["people"]
-#            print("dag-
-                 
-#                   )
-#         except:
-#             print("API currently not available, using hardcoded data instead.")
-#             number_of_people_in_space = 2
-#             list_of_people_in_space = [
-#                 {"craft": "ISS", "name": "Oleg Kononenko"},
-#                 {"craft": "ISS", "name": "Nikolai Chub"},
+import pandas as pd
+import numpy as np
+# import pyspark.pandas as ps
+# from pyspark.sql import SparkSession
+from airflow.models.connection import Connection
+import logging
+import boto3
+from botocore.exceptions import ClientError
+# from basketball_reference_scraper.teams import get_roster #, get_team_stats, get_opp_stats, get_roster_stats, get_team_misc
 
-#             ]
+# import pyspark.pandas as ps
+# from pyspark.sql import SparkSession
+import json
+from io import StringIO # python3; python2: BytesIO 
+import boto3
+# import s3fs
 
-#         context["ti"].xcom_push(
-#             key="number_of_people_in_space", value=number_of_people_in_space
-#         )
-#         return list_of_people_in_space
+aws_psql = Connection(
+     conn_id="aws_psql",
+     conn_type="mysql",
+    #  description="connection description",
+     host="35.153.83.72",
+     login="admin",
+     password="password",
+    #  extra={"this_param": "some val", "that_param": "other val*"},
+ )
+@dag(
+    start_date=datetime(2024, 11, 7),
+    schedule="@daily",
+    catchup=False,
+    doc_md=__doc__,
+    default_args={"owner": "Chaunce", "retries": 3},
+    tags=["example"],
+)
+def upload_file():
 
-#     @task
-#     def print_astronaut_craft(greeting: str, person_in_space: dict) -> None:
-#         """
-#         This task creates a print statement with the name of an
-#         Astronaut in space and the craft they are flying on from
-#         the API request results of the previous task, along with a
-#         greeting which is hard-coded in this example.
-#         """
-#         craft = person_in_space["craft"]
-#         name = person_in_space["name"]
+    # Upload the file
+    s3_client = boto3.client('s3')
 
-#         print(f"{name}print_astronaut_craft is currently in space flying on the {craft}! {greeting}")
+    s3_client.upload_file('/home/cha/Desktop/Work/projects/airflow/players.csv', 'arn:aws:s3:us-east-1:129579558702:accesspoint/access', 'players.csv')
 
-#     # Use dynamic task mapping to run the print_astronaut_craft task for each
-#     # Astronaut in space
-#     print_astronaut_craft.partial(greeting="Hello! :)").expand(
-#         person_in_space=get_aep_profile()  # Define dependencies using TaskFlow API syntax
-#     )
+    return print('done')
 
 
-# # Instantiate the DAG
-# workflow()
+upload_file()
